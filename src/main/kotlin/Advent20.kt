@@ -1,9 +1,11 @@
 import java.nio.charset.Charset
 import java.nio.file.Paths
 import kotlin.io.path.readLines
+import kotlin.math.max
+import kotlin.math.min
 
-fun main(args: Array<String>) {
-    puzzle8()
+fun main() {
+    puzzle11()
 }
 
 fun puzzle1() {
@@ -434,4 +436,301 @@ fun puzzle8() {
 
     println(puzzle8b())
 
+}
+
+fun puzzle9() {
+
+    val input =
+        {}::class.java
+            .getResource("advent20/puzzle9-input.txt")
+            ?.let { f -> Paths.get(f.toURI()).readLines(Charset.defaultCharset()).mapNotNull { it.toIntOrNull() } }
+            ?: listOf()
+
+    fun checkSumContains(list: List<Int>, number: Int): Boolean = list.map { number - it }.any { list.contains(it) }
+
+    fun puzzle9a(): Int {
+        // we drop the last window because if we reach last window without failure then preamble is correct
+        return input.windowed(25, 1)
+            .dropLast(1)
+            .mapIndexed { i, l -> if (checkSumContains(l, input[i+25])) { -1 } else { input[i+25] } }
+            .first { it != -1 }
+    }
+
+    fun puzzle9b(): Int {
+        val (max, res) =
+            input
+                .windowed(25, 1)
+                .dropLast(1)
+                .mapIndexed { i, l -> if (checkSumContains(l, input[i+25])) { Pair(-1, -1) } else { Pair(i+25, input[i+25]) } }
+                .first { it.first != -1 }
+        var start = 0
+        var end = -1
+        var sum: Int = input[0]
+        for (i in 1 until max) {
+            if (sum == res) {
+                end = i - 1
+                break
+            } else {
+                sum += input[i]
+                while (sum > res) {
+                    sum -= input[start]
+                    start += 1
+                }
+            }
+        }
+        return input.subList(start, end + 1).sorted().let { it.first() + it.last() }
+    }
+
+    println(puzzle9b())
+}
+
+fun puzzle10() {
+
+    val input =
+        {}::class.java
+            .getResource("advent20/puzzle10-input.txt")
+            ?.let { f -> Paths.get(f.toURI()).readLines(Charset.defaultCharset()).mapNotNull { it.toIntOrNull() } }
+            ?: listOf()
+
+    fun puzzle10a(): Int {
+        val dist = input
+            .sorted()
+            .zipWithNext { a, b -> b - a }
+            .groupBy { it }
+            .mapValues { it.value.count() }
+        return (dist[1]!! + 1) * (dist[3]!! + 1)
+    }
+
+    fun puzzle10b(): Long {
+        val srt = (input + 0).sorted()
+        val all = srt + (srt.last() + 3)
+        val memo = mutableMapOf<Int, Int>()
+        fun fact(x: Int): Int = if(x <= 1) { 1 } else { memo.getOrPut(x) { x * fact(x-1) } }
+
+        val run = all
+            .zipWithNext { a, b -> b - a }
+            .fold(mutableListOf(Pair(1,0))) { acc, i ->
+                val end = acc.removeLast()
+                if (end.first == i) {
+                    acc.add(Pair(end.first, end.second + 1))
+                } else {
+                    acc.add(end)
+                    acc.add(Pair(i, 1))
+                }
+                acc
+            }
+        val res = run
+            .map { p ->
+                if (p.first == 1) {
+                    if (p.second < 2) {
+                        1
+                    } else {
+                        val n = p.second - 1
+                        val r = (n/2) + 1
+                        var s = 0
+                        val nf = fact(n)
+                        for (i in 0..r) {
+                            val rf = fact(i)
+                            val nrf = fact(n-i)
+                            val cs = nf / (rf * nrf)
+                            s += cs
+                        }
+                       s
+                    }
+                } else {
+                    1
+                }
+            }
+        return res.fold(1L) { acc, i -> acc * i }
+    }
+
+    println(puzzle10b())
+}
+
+fun puzzle11() {
+
+    val input =
+        {}::class.java
+            .getResource("advent20/puzzle11-input.txt")
+            ?.let { f -> Paths.get(f.toURI()).readLines(Charset.defaultCharset()).map { it.toMutableList() } }
+            ?: listOf()
+
+    fun puzzle11a(): Int {
+
+        val isEmpty: (Char) -> Boolean = { c -> c in setOf('L', '.') }
+
+        fun checkSeatForEmpty(grid: List<List<Char>>, r: Int, c: Int): List<Boolean> {
+            val isFirstRow = (r == 0)
+            val isLastRow = (r == input.size - 1)
+            val isFirstCol = (c == 0)
+            val isLastCol = (c == input.first().size - 1)
+
+            val res = (0 until 8)
+                .map { i ->
+                    when (i) {
+                        0 -> isFirstRow || isFirstCol || isEmpty(grid[r-1][c-1])
+                        1 -> isFirstRow || isEmpty(grid[r-1][c])
+                        2 -> isFirstRow || isLastCol || isEmpty(grid[r-1][c+1])
+                        3 -> isFirstCol || isEmpty(grid[r][c-1])
+                        4 -> isLastCol || isEmpty(grid[r][c+1])
+                        5 -> isLastRow || isFirstCol || isEmpty(grid[r+1][c-1])
+                        6 -> isLastRow || isEmpty(grid[r+1][c])
+                        7 -> isLastRow || isLastCol || isEmpty(grid[r+1][c+1])
+                        else -> false
+                    }
+                }
+            return res
+        }
+
+        fun checkSeatForOccupied(grid: List<List<Char>>, r: Int, c: Int): List<Boolean> {
+            val isFirstRow = (r == 0)
+            val isLastRow = (r == input.size - 1)
+            val isFirstCol = (c == 0)
+            val isLastCol = (c == input.first().size - 1)
+
+            val res = (0 until 8)
+                .map { i ->
+                    when (i) {
+                        0 -> isFirstRow || isFirstCol || isEmpty(grid[r-1][c-1])
+                        1 -> isFirstRow || isEmpty(grid[r-1][c])
+                        2 -> isFirstRow || isLastCol || isEmpty(grid[r-1][c+1])
+                        3 -> isFirstCol || isEmpty(grid[r][c-1])
+                        4 -> isLastCol || isEmpty(grid[r][c+1])
+                        5 -> isLastRow || isFirstCol || isEmpty(grid[r+1][c-1])
+                        6 -> isLastRow || isEmpty(grid[r+1][c])
+                        7 -> isLastRow || isLastCol || isEmpty(grid[r+1][c+1])
+                        else -> true
+                    }
+                }.map { it.not() }
+            return res
+        }
+
+        var nc: Int
+        var re = input.toMutableList()
+        do {
+            val cpy = MutableList(re.size) { r -> MutableList(re[r].size) { c -> re[r][c] } }
+            nc = 0
+            for (r in input.indices) {
+                for (c in input[r].indices) {
+                    val st = re[r][c]
+                    when {
+                        (st == 'L' && checkSeatForEmpty(re, r, c).all { it }) -> {
+                            nc += 1
+                            cpy[r][c] = '#'
+                        }
+                        (st == '#' && checkSeatForOccupied(re, r, c).count { it } >= 4) -> {
+                            nc += 1
+                            cpy[r][c] = 'L'
+                        }
+                        else -> {
+                            cpy[r][c] = st
+                        }
+                    }
+                }
+            }
+            re = cpy
+        } while (nc != 0)
+        return re.fold(0) { acc, r -> acc + r.count { it == '#' } }
+    }
+
+    fun puzzle11b(): Int {
+        val isSeat: (Char) -> Boolean = { c -> c != '.' }
+        val isEmpty: (Char) -> Boolean = { c -> c == 'L' }
+        val isOccupied: (Char) -> Boolean = { c -> c == '#' }
+        val height = input.size
+        val width = input.first().size
+
+        fun compileLr(grid: List<List<Char>>, r:Int , c: Int): List<Char> {
+            val u = mutableListOf<Char>()
+            val d = mutableListOf<Char>()
+            var cr = r-1
+            var cc = c-1
+            while (cr >= 0 && cc >= 0) {
+                u.add(grid[cr][cc])
+                cr -= 1
+                cc -= 1
+            }
+            cr = r+1
+            cc = c+1
+            while (cr < height && cc < width) {
+                d.add(grid[cr][cc])
+                cr += 1
+                cc += 1
+            }
+            return u.reversed() + listOf('x') + d
+        }
+
+        fun compileRl(grid: List<List<Char>>, r:Int , c: Int): List<Char> {
+            val u = mutableListOf<Char>()
+            val d = mutableListOf<Char>()
+            var cr = r-1
+            var cc = c+1
+            while (cr >= 0 && cc < width) {
+                u.add(grid[cr][cc])
+                cr -= 1
+                cc += 1
+            }
+            cr = r+1
+            cc = c-1
+            while (cr < height && cc >= 0) {
+                d.add(grid[cr][cc])
+                cr += 1
+                cc -= 1
+            }
+            return u.reversed() + listOf('x') + d
+        }
+
+        fun checkSeat(grid: List<List<Char>>, r: Int, c: Int, check: (Char) -> Boolean): List<Boolean?> {
+            val row = grid[r]
+            val col = grid.map { it[c] }
+            val lr = compileLr(grid, r, c)
+            val rl = compileRl(grid, r, c)
+            val ilr = lr.indexOf('x')
+            val irl = rl.indexOf('x')
+            val res = (0 until 8)
+                .map { i ->
+                    when (i) {
+                        0 -> lr.subList(0, ilr).reversed().firstOrNull(isSeat)?.let(check)
+                        1 -> col.subList(0, r).reversed().firstOrNull(isSeat)?.let(check)
+                        2 -> rl.subList(0, irl).reversed().firstOrNull(isSeat)?.let(check)
+                        3 -> row.subList(0, c).reversed().firstOrNull(isSeat)?.let(check)
+                        4 -> row.subList(c+1, width).firstOrNull(isSeat)?.let(check)
+                        5 -> rl.subList(irl+1, rl.size).firstOrNull(isSeat)?.let(check)
+                        6 -> col.subList(r+1, height).firstOrNull(isSeat)?.let(check)
+                        7 -> lr.subList(ilr+1, lr.size).firstOrNull(isSeat)?.let(check)
+                        else -> false
+                    }
+                }
+            return res
+        }
+
+        var nc: Int
+        var re = input.toMutableList()
+        do {
+            val cpy = MutableList(re.size) { r -> MutableList(re[r].size) { c -> re[r][c] } }
+            nc = 0
+            for (r in input.indices) {
+                for (c in input[r].indices) {
+                    val st = re[r][c]
+                    when {
+                        (st == 'L' && checkSeat(re, r, c, isEmpty).all { it == null || it }) -> {
+                            nc += 1
+                            cpy[r][c] = '#'
+                        }
+                        (st == '#' && checkSeat(re, r, c, isOccupied).count { it != null && it } >= 5) -> {
+                            nc += 1
+                            cpy[r][c] = 'L'
+                        }
+                        else -> {
+                            cpy[r][c] = st
+                        }
+                    }
+                }
+            }
+            re = cpy
+        } while (nc != 0)
+        return re.fold(0) { acc, r -> acc + r.count { it == '#' } }
+    }
+
+    println(puzzle11b())
 }
