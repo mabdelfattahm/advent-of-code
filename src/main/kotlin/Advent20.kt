@@ -1,11 +1,11 @@
 import java.nio.charset.Charset
 import java.nio.file.Paths
 import kotlin.io.path.readLines
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.abs
+import kotlin.math.sign
 
 fun main() {
-    puzzle11()
+    puzzle12()
 }
 
 fun puzzle1() {
@@ -733,4 +733,82 @@ fun puzzle11() {
     }
 
     println(puzzle11b())
+}
+
+fun puzzle12() {
+    val input =
+        {}::class.java
+            .getResource("advent20/puzzle12-input.txt")
+            ?.let { f -> Paths.get(f.toURI()).readLines(Charset.defaultCharset()).map { Pair(it.first(), it.substring(1).toInt()) } }
+            ?: listOf()
+
+    fun puzzle12a() : Int {
+        val f = input.fold(Pair(90, Pair(0,0))) { acc, p ->
+            val d = acc.first
+            val (x, y) = acc.second
+            when(p.first) {
+                'R' -> Pair((d + p.second).mod(360), acc.second)
+                'L' -> Pair((d - p.second + 360).mod(360), acc.second)
+                'F' -> when (d) {
+                    0 -> Pair(d, Pair(x, y + p.second))
+                    90 -> Pair(d, Pair(x + p.second, y))
+                    180 -> Pair(d, Pair(x, y - p.second))
+                    270 -> Pair(d, Pair(x - p.second, y))
+                    else -> Pair(d, Pair(x, y))
+                }
+                'N' -> Pair(d, Pair(x, y + p.second))
+                'S' -> Pair(d, Pair(x, y - p.second))
+                'E' -> Pair(d, Pair(x + p.second, y))
+                'W' -> Pair(d, Pair(x - p.second, y))
+                else -> acc
+            }
+        }
+        return (abs(f.second.first) + abs(f.second.second))
+    }
+
+    fun puzzle12b() : Int {
+        data class WayPoint(val x: Int, val y: Int) {
+            fun rotateCW(deg: Int): WayPoint =
+                when (deg) {
+                    90 -> WayPoint(y, -x)
+                    180 -> WayPoint(-x, -y)
+                    270 -> rotateCCW(90)
+                    else -> WayPoint(x, y)
+                }
+
+            fun rotateCCW(deg: Int): WayPoint =
+                when (deg) {
+                    90 -> WayPoint(-y, x)
+                    180 -> WayPoint(-x, -y)
+                    270 -> rotateCW(90)
+                    else -> WayPoint(x, y)
+                }
+        }
+        data class Coordinates(val x: Int, val y: Int) {
+            fun advance(wayPoint: WayPoint, scale: Int): Coordinates =
+                Coordinates(x + (scale * wayPoint.x), y + (scale * wayPoint.y))
+        }
+        data class Navigator(val wp: WayPoint, val cp: Coordinates) {
+            fun advance(scale: Int): Navigator = Navigator(wp, cp.advance(wp, scale))
+            fun adjustWp(x: Int, y: Int): Navigator = Navigator(WayPoint(wp.x + x, wp.y + y), cp)
+            fun rotateCW(deg: Int): Navigator = Navigator(wp.rotateCW(deg), cp)
+            fun rotateCCW(deg: Int): Navigator = Navigator(wp.rotateCCW(deg), cp)
+        }
+
+        val f = input.fold(Navigator(WayPoint(10, 1), Coordinates(0, 0))) { nav, p ->
+            when(p.first) {
+                'R' -> nav.rotateCW(p.second)
+                'L' -> nav.rotateCCW(p.second)
+                'F' -> nav.advance(p.second)
+                'N' -> nav.adjustWp(0, p.second)
+                'S' -> nav.adjustWp(0, -p.second)
+                'E' -> nav.adjustWp(p.second, 0)
+                'W' -> nav.adjustWp(-p.second, 0)
+                else -> nav
+            }
+        }
+        return (abs(f.cp.x) + abs(f.cp.y))
+    }
+
+    println(puzzle12b())
 }
