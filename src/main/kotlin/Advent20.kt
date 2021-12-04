@@ -2,10 +2,9 @@ import java.nio.charset.Charset
 import java.nio.file.Paths
 import kotlin.io.path.readLines
 import kotlin.math.abs
-import kotlin.math.sign
 
 fun main() {
-    puzzle12()
+    puzzle13()
 }
 
 fun puzzle1() {
@@ -811,4 +810,24 @@ fun puzzle12() {
     }
 
     println(puzzle12b())
+}
+
+fun puzzle13() {
+    val input =
+        {}::class.java
+            .getResource("advent20/puzzle13-input.txt")
+            ?.let { f -> Paths.get(f.toURI()).readLines(Charset.defaultCharset()) }
+            ?: listOf()
+
+    fun puzzle13a(): Int {
+        val (ct, ids) = input.zipWithNext { a, b -> Pair(a.toInt(), b.split(",").filterNot { it == "x" }.map { it.toInt() }) }.first()
+        val wt = ids.map { Pair(it, it - ct.toDouble().rem(it).toInt()) }
+        return wt.minByOrNull { it.second }!!.let { it.first * it.second }
+    }
+
+    fun puzzle13b(): Long {
+        return 0
+    }
+
+    println(puzzle13b())
 }
