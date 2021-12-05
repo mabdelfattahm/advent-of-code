@@ -99,6 +99,41 @@ fun puzzle3b(): Int {
 
 }
 
+object Puzzle4 {
+    data class BoardCell(val content: Int, var marked: Boolean = false)
+    data class Board(val cells: List<List<BoardCell>>)
+    val marker: (Board, Int) -> Board = { b, n -> b.cells.flatten().filterNot { it.marked  }.firstOrNull { it.content == n }?.let { c -> c.marked = true; b; } ?: b }
+    val rowChecker: (Board) -> Boolean = { b -> b.cells.any { r -> r.all { it.marked } } }
+    val colChecker: (Board) -> Boolean = { b -> b.cells.map { r -> r.map { it.marked } }.reduce { acc, r -> acc.zip(r) {a, b -> a && b } }.any { it } }
+    val markAndCheck: (Board, Int) -> Boolean = { b, n -> marker(b, n); rowChecker(b) || colChecker(b); }
+    val scoreCalculator: (Board) -> Int = { b -> b.cells.flatten().filterNot { it.marked }.sumOf { it.content } }
+    val numbers: (List<String>) -> List<Int> = { it.first().split(",").map { n -> n.toInt() } }
+    val boards: (List<String>) -> List<Board> = { it.drop(2).windowed(5, 6) { l -> Board(l.map { ll -> ll.windowed(2, 3).map { c -> BoardCell(c.trim().toInt()) } }) } }
+}
+
+fun puzzle4a(): Int {
+    return readLines("advent21/puzzle4-input.txt").let {
+        val numbers = Puzzle4.numbers(it)
+        val boards = Puzzle4.boards(it)
+        numbers.map { n -> (boards.firstOrNull { b -> Puzzle4.markAndCheck(b, n) }?.let { b -> Puzzle4.scoreCalculator(b) * n } ?: 0) }.first { s -> s != 0 }
+    }
+}
+
+fun puzzle4b(): Int {
+    return readLines("advent21/puzzle4-input.txt").let {
+        val numbers = Puzzle4.numbers(it)
+        val boards = Puzzle4.boards(it)
+        val solved = mutableListOf<Pair<Puzzle4.Board, Int>>()
+        numbers.map { n ->
+            boards.filterNot { b -> solved.map { p -> p.first }.contains(b) }
+                .forEach { b -> if (Puzzle4.markAndCheck(b, n)) { solved.add(Pair(b, Puzzle4.scoreCalculator(b) * n)) } }
+        }
+        solved.last().second
+    }
+}
+
+
+
 fun main() {
-    println(puzzle3b())
+    println(puzzle4b())
 }
