@@ -173,8 +173,65 @@ fun puzzle5b(): Int {
         .count()
 }
 
+fun puzzle6a(): Int {
+    return readLines("advent21/puzzle6-input.txt")
+        .first()
+        .split(",")
+        .map { it.toInt() }
+        .groupBy { it }
+        .mapValues { it.value.size }
+        .let { g ->
+            (0 until 80).fold(g) { acc, _ ->
+                val m = mutableMapOf<Int, Int>()
+                acc.entries
+                    .sortedBy { it.key }
+                    .forEach { e ->
+                        when (e.key) {
+                            0 -> {
+                                m[6] = e.value
+                                m[8] = e.value
+                            }
+                            7 -> m[6] = e.value + (m[6]?:0)
+                            else -> m[e.key - 1] = e.value
+                        }
+                }
+                m
+            }
+        }
+        .values
+        .sum()
+}
+
+fun puzzle6b(): Long {
+    return readLines("advent21/puzzle6-input.txt")
+        .first()
+        .split(",")
+        .map { it.toInt() }
+        .groupBy { it }
+        .mapValues { it.value.size.toLong() }
+        .let { g ->
+            (0 until 256).fold(g) { acc, _ ->
+                val m = mutableMapOf<Int, Long>()
+                acc.entries
+                    .sortedBy { it.key }
+                    .forEach { e ->
+                        when (e.key) {
+                            0 -> {
+                                m[6] = e.value
+                                m[8] = e.value
+                            }
+                            7 -> m[6] = e.value + (m[6]?:0)
+                            else -> m[e.key - 1] = e.value
+                        }
+                }
+                m
+            }
+        }
+        .values
+        .sum()
+}
 
 
 fun main() {
-    println(puzzle5b())
+    println(puzzle6b())
 }
