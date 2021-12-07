@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 import java.nio.charset.Charset
 import java.nio.file.Paths
 import kotlin.io.path.readLines
@@ -173,65 +175,60 @@ fun puzzle5b(): Int {
         .count()
 }
 
-fun puzzle6a(): Int {
-    return readLines("advent21/puzzle6-input.txt")
-        .first()
-        .split(",")
-        .map { it.toInt() }
-        .groupBy { it }
-        .mapValues { it.value.size }
-        .let { g ->
-            (0 until 80).fold(g) { acc, _ ->
-                val m = mutableMapOf<Int, Int>()
-                acc.entries
-                    .sortedBy { it.key }
-                    .forEach { e ->
-                        when (e.key) {
-                            0 -> {
-                                m[6] = e.value
-                                m[8] = e.value
+object Puzzle6 {
+    fun advance(days: Int): Long {
+        return readLines("advent21/puzzle6-input.txt")
+            .first()
+            .split(",")
+            .map { it.toInt() }
+            .groupBy { it }
+            .mapValues { it.value.size.toLong() }
+            .let { g ->
+                (0 until days).fold(g) { acc, _ ->
+                    val m = mutableMapOf<Int, Long>()
+                    acc.entries
+                        .sortedBy { it.key }
+                        .forEach { e ->
+                            when (e.key) {
+                                0 -> {
+                                    m[6] = e.value
+                                    m[8] = e.value
+                                }
+                                7 -> m[6] = e.value + (m[6]?:0)
+                                else -> m[e.key - 1] = e.value
                             }
-                            7 -> m[6] = e.value + (m[6]?:0)
-                            else -> m[e.key - 1] = e.value
                         }
+                    m
                 }
-                m
             }
-        }
-        .values
-        .sum()
+            .values
+            .sum()
+    }
 }
 
-fun puzzle6b(): Long {
-    return readLines("advent21/puzzle6-input.txt")
-        .first()
-        .split(",")
-        .map { it.toInt() }
-        .groupBy { it }
-        .mapValues { it.value.size.toLong() }
-        .let { g ->
-            (0 until 256).fold(g) { acc, _ ->
-                val m = mutableMapOf<Int, Long>()
-                acc.entries
-                    .sortedBy { it.key }
-                    .forEach { e ->
-                        when (e.key) {
-                            0 -> {
-                                m[6] = e.value
-                                m[8] = e.value
-                            }
-                            7 -> m[6] = e.value + (m[6]?:0)
-                            else -> m[e.key - 1] = e.value
-                        }
-                }
-                m
+fun puzzle6a(): Int = Puzzle6.advance(80).toInt()
+
+fun puzzle6b(): Long = Puzzle6.advance(256)
+
+object Puzzle7 {
+    fun fuelCalc(costFn: (Int, Int) -> Int): Int {
+        return readLines("advent21/puzzle7-input.txt")
+            .first()
+            .split(",")
+            .map { it.toInt() }
+            .let { ns ->
+                val ps = ns.maxOrNull() ?: ns.size
+                ns.map { n -> List(ps) { index -> costFn(n, index) } }
+                    .reduce { acc, ints -> acc.zip(ints) { a,b -> a+b } }
+                    .let { fs -> fs.minOrNull() ?: -1 /* ?.let { fs.indexOf(it) } ?: -1 */ }
             }
-        }
-        .values
-        .sum()
+    }
 }
 
+fun puzzle7a(): Int = Puzzle7.fuelCalc { n, i -> abs(n - i) }
+
+fun puzzle7b(): Int = Puzzle7.fuelCalc { n, i -> ((abs(n - i) + 1) * abs(n - i)) / 2 }
 
 fun main() {
-    println(puzzle6b())
+    println(puzzle7b())
 }
