@@ -229,6 +229,57 @@ fun puzzle7a(): Int = Puzzle7.fuelCalc { n, i -> abs(n - i) }
 
 fun puzzle7b(): Int = Puzzle7.fuelCalc { n, i -> ((abs(n - i) + 1) * abs(n - i)) / 2 }
 
+object Puzzle8 {
+    val isOne: (String) -> Boolean = { s -> s.length == 2 }
+    val isFour: (String) -> Boolean = { s -> s.length == 4 }
+    val isSeven: (String) -> Boolean = { s -> s.length == 3 }
+    val isEight: (String) -> Boolean = { s -> s.length == 7 }
+}
+
+fun puzzle8a(): Int {
+    return readLines("advent21/puzzle8-input.txt")
+        .flatMap { it.split("|")[1].trim().split(" ") }
+        .count { n -> Puzzle8.isOne(n) || Puzzle8.isFour(n) || Puzzle8.isSeven(n) || Puzzle8.isEight(n) }
+}
+
+fun puzzle8b(): Int {
+
+    fun decode(l: List<String>): Map<String, Int> {
+        val one = l.first(Puzzle8.isOne) // cf
+        val four = l.first(Puzzle8.isFour) // bcdf
+        val seven = l.first(Puzzle8.isSeven) // acf
+        val eight = l.first(Puzzle8.isEight) // abcdefg
+
+        val rem = l.filterNot { it == one || it == four || it == seven || it == eight }
+        val sixPieces = rem.filter { it.length == 6 } // six pieces are 0, 6, 9
+        val fivePieces = rem.filter { it.length == 5 } // five pieces are 2, 3, 5
+        val aeg = eight.filterNot { four.contains(it) }
+        val bdeg = eight.filterNot { seven.contains(it) }
+        val bdegPieces = rem.filter { s -> bdeg.all { s.contains(it) }  }
+        val aegPieces = rem.filter { s -> aeg.all { s.contains(it) } } // aeg pieces should be 0, 2, 6
+
+        val two = fivePieces.first { aegPieces.contains(it) } // only 2 (acdeg) in the five piece group and aeg group
+        val six = bdegPieces.first() // bdeg piece should be 6 (abdefg) only
+        val zero = aegPieces.filterNot { it == two || it == six }.first() // zero (abcefg) is the remaining piece in the aeg group
+        val nine = sixPieces.filterNot { it == zero || it == six }.first() // nine (abcdfg) is the remaining piece in the five pieces group
+        val three = fivePieces.filterNot { it == two }.first { s -> one.all { s.contains(it) } } // three (acdfg) is the only element that contains both pieces of one
+        val five = fivePieces.filterNot { it == two || it == three }.first() // five (acdfg) is the remaining piece
+
+        return mapOf(
+            zero to 0, one to 1, two to 2, three to 3, four to 4, five to 5, six to 6, seven to 7, eight to 8, nine to 9
+        ).mapKeys { it.key.toSortedSet().joinToString("") }
+    }
+
+    fun convert(l: List<String>, m: Map<String, Int>): List<Int> {
+        return l.map { s -> m[s]!! }
+    }
+
+    return readLines("advent21/puzzle8-input.txt")
+        .map { it.split("|").map { p -> p.trim().split(" ") } }
+        .map { (all, ns) -> convert(ns.map { s -> s.toSortedSet().joinToString("") }, decode(all)) }
+        .sumOf { it.joinToString("").toInt() }
+}
+
 fun main() {
-    println(puzzle7b())
+    println(puzzle8b())
 }
