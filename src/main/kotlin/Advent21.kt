@@ -280,6 +280,59 @@ fun puzzle8b(): Int {
         .sumOf { it.joinToString("").toInt() }
 }
 
+fun puzzle9a(): Int {
+    return readLines("advent21/puzzle9-input.txt")
+        .map { listOf(10) + it.map { d -> d.toString().toInt() } + listOf(10) }
+        .let { listOf(List(it.first().size) { 10 }) + it + listOf(List(it.first().size) { 10 }) }
+        .windowed(3, 1)
+        .flatMap { (s, m, e) ->
+            m.mapIndexedNotNull { i, n ->
+                when {
+                    (i in 1 until m.size - 1) -> Pair(n, listOf(s[i], m[i-1], m[i+1], e[i]))
+                    else -> null
+                }
+            }
+        }
+        .filter { it.second.all { n -> n > it.first } }
+        .sumOf { it.first + 1 }
+}
+
+fun puzzle9b(): Int {
+    val input = readLines("advent21/puzzle9-input.txt").map { it.map { d -> d.toString().toInt() } }
+    val height = input.size
+    val width = input.first().size
+    val lps = input.map { listOf(10) + it + listOf(10) }
+        .let { listOf(List(it.first().size) { 10 }) + it + listOf(List(it.first().size) { 10 }) }
+        .windowed(3, 1)
+        .flatMapIndexed { row, (s, m, e) ->
+            m.mapIndexedNotNull { col, n ->
+                if(col in 1 until m.size - 1 && listOf(s[col], m[col-1], m[col+1], e[col]).all { it > n }) {
+                    Pair(row,col-1)
+                } else {
+                    null
+                }
+            }
+        }
+
+    fun countSurrounding(row: Int, col: Int, ps: MutableSet<Pair<Int, Int>> =  mutableSetOf()): Set<Pair<Int, Int>> {
+        val p = Pair(row, col)
+        return if (row == height || row == -1 || col == width || col == -1 || ps.contains(p)) {
+            ps
+        } else if (input[row][col] == 9){
+            ps
+        } else {
+            ps.add(p)
+            val up = row - 1
+            val down = row + 1
+            val left = col - 1
+            val right = col + 1
+            countSurrounding(up, col, ps) + countSurrounding(down, col, ps) + countSurrounding(row, left, ps) + countSurrounding(row, right, ps)
+        }
+    }
+
+    return lps.map { (row, col) -> countSurrounding(row, col).count() }.sorted().takeLast(3).fold(1) { acc, i -> acc * i }
+}
+
 fun main() {
-    println(puzzle8b())
+    println(puzzle9b())
 }
