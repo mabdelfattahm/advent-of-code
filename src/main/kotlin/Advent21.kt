@@ -333,6 +333,53 @@ fun puzzle9b(): Int {
     return lps.map { (row, col) -> countSurrounding(row, col).count() }.sorted().takeLast(3).fold(1) { acc, i -> acc * i }
 }
 
+object Puzzle10 {
+    val obs = setOf('<', '(', '[', '{')
+    val cbs = setOf('>', ')', ']', '}')
+    val com = mapOf('>' to '<', ')' to '(', ']' to '[', '}' to '{')
+}
+
+fun puzzle10a(): Int {
+    val cost = mapOf(')' to 3, ']' to 57, '}' to 1197, '>' to 25137)
+    return readLines("advent21/puzzle10-input.txt")
+        .mapNotNull { l ->
+            val acc = mutableListOf<Char>()
+            l.firstOrNull { c ->
+                if (Puzzle10.obs.contains(c)) { acc.add(c); false }
+                else if (Puzzle10.cbs.contains(c)) { val ls = acc.removeLastOrNull(); ls == null || Puzzle10.com[c]!! != ls }
+                else { false }
+            }
+        }
+        .mapNotNull { cost[it] }
+        .sum()
+}
+
+fun puzzle10b(): Long {
+    val cost = mapOf('(' to 1, '[' to 2, '{' to 3, '<' to 4)
+    fun unclosed(line: String, processed: MutableList<Char> = mutableListOf()): MutableList<Char> {
+        val c = line.firstOrNull()
+        return when {
+            c == null -> processed
+            Puzzle10.obs.contains(c) -> unclosed(line.drop(1), processed.also { it.add(c) })
+            Puzzle10.cbs.contains(c) -> {
+                val ls = processed.removeLastOrNull()
+                if (ls == null || Puzzle10.com[c]!! != ls) {
+                    mutableListOf()
+                } else {
+                    unclosed(line.drop(1), processed)
+                }
+            }
+            else -> mutableListOf()
+        }
+    }
+    return readLines("advent21/puzzle10-input.txt")
+        .map { unclosed(it) }
+        .filter { it.isNotEmpty() }
+        .map { it.reversed().map { c -> cost[c]!! }.fold(0L) { acc, i -> (acc * 5) + i } }
+        .sorted()
+        .let{ it[it.size / 2] }
+}
+
 fun main() {
-    println(puzzle9b())
+    println(puzzle10b())
 }
