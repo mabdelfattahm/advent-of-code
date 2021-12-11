@@ -380,6 +380,67 @@ fun puzzle10b(): Long {
         .let{ it[it.size / 2] }
 }
 
+object Puzzle11 {
+    fun inc(m: MutableMap<Pair<Int, Int>, Int>, p: Pair<Int, Int>): Pair<Pair<Int, Int>, Int>?  =
+        m[p]?.let {
+            m[p] = it + 1
+            Pair(p, it + 1)
+        }
+    fun step(m: MutableMap<Pair<Int, Int>, Int>, oc: Int): Pair<MutableMap<Pair<Int, Int>, Int>, Int> {
+        val nm = m.mapValues { e -> e.value + 1 }.toMutableMap()
+        val ch = nm.filter { e -> e.value > 9 }.map { e -> e.key }.toMutableSet()
+        val v = mutableSetOf<Pair<Int, Int>>()
+        while (ch.isNotEmpty()) {
+            val f = ch.first()
+            ch.remove(f)
+            v.add(f)
+            val (row, col) = f
+            listOf(Pair(row - 1, col - 1), Pair(row - 1, col), Pair(row - 1, col + 1), Pair(row, col - 1), Pair(row, col + 1), Pair(row + 1, col - 1), Pair(row + 1, col), Pair(row + 1, col + 1))
+                .filterNot { p -> v.contains(p) }
+                .mapNotNull { p -> inc(nm, p) }
+                .filter { p -> p.second > 9 }
+                .forEach { p -> ch.add(p.first) }
+        }
+        v.forEach { p -> nm[p] = 0 }
+        return Pair(nm, v.size + oc)
+    }
+}
+
+fun puzzle11a(): Int {
+
+    return readLines("advent21/puzzle11-input.txt")
+        .foldIndexed(mutableMapOf<Pair<Int, Int>, Int>()) { row, m, l ->
+            l.forEachIndexed { col, c -> m[Pair(row, col)] = c.toString().toInt() }
+            m
+        }
+        .let { (0 until 100).fold(Pair(it, 0)) { (m, oc), _ -> Puzzle11.step(m, oc) } }
+        .second
+}
+
+
+
+fun puzzle11b(): Int {
+    return readLines("advent21/puzzle11-input.txt")
+        .foldIndexed(mutableMapOf<Pair<Int, Int>, Int>()) { row, m, l ->
+            l.forEachIndexed { col, c -> m[Pair(row, col)] = c.toString().toInt() }
+            m
+        }
+        .let {
+            var c = 0
+            var oc = 0
+            var nc = 0
+            var nm = it
+            while(nc - oc != 100) {
+                oc = nc
+                c+=1
+                val(m, cs) = Puzzle11.step(nm, oc)
+                nm = m
+                nc = cs
+            }
+            c
+        }
+}
+
 fun main() {
-    println(puzzle10b())
+    println(puzzle11b())
 }
